@@ -22,7 +22,7 @@ jobs:
           node-version: '20' # 使用するNode.jsのバージョンを指定
 
       - name: 📦 Install dependencies
-        run: npm install # または yarn install, pnpm install
+        run: npm ci # lockfileに従いクリーンインストール
 
       - name: 🏗️ Build project
         # React CRAの場合は 'npm run build'
