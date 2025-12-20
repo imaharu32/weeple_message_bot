@@ -50,6 +50,12 @@ function App() {
     setError('')
     setResponse('')
 
+    if (!option.url) {
+      setLoading(false)
+      setError('送信先URLが設定されていません。環境変数をご確認ください。')
+      return
+    }
+
     try {
       const response = await fetch(option.url, {
         method: option.method,
