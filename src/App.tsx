@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import './App.css'
-import { collection, addDoc } from "firebase/firestore"; 
+import { collection, addDoc, deleteDoc, doc} from "firebase/firestore"; 
 import { db } from "./firebase";
+import { HistoryModal } from "./HistoryModal";
 
-type ChannelType = 'PLAY' | 'CREATE' | 'DRAFT'
+export type ChannelType = 'PLAY' | 'CREATE' | 'DRAFT'
 interface Option {
   label: string
   url: string
@@ -38,13 +39,18 @@ function App() {
   const [error, setError] = useState<string>('')
   const [message, setMessage] = useState<string>('')
   const [selectedOption, setSelectedOption] = useState<string>('0')
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
 
   const post_options: Option[] = [
     { label: 'プレイ会', url: play_url, method: 'POST', channelType: 'PLAY' },
     { label: '制作会', url: create_url, method: 'POST', channelType: 'CREATE' },
     { label: '運営用草稿チャンネル', url: draft_url, method: 'POST', channelType: 'DRAFT' },
   ]
-
+  const channelMap: Record<ChannelType, Option> = {
+    PLAY: post_options[0],
+    CREATE: post_options[1],
+    DRAFT: post_options[2],
+  };
   const handleRequest = async (option: Option, message: string) => {
     setLoading(true)
     setError('')
@@ -57,7 +63,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(option.url, {
+      const response = await fetch(option.url + '?wait=true', {
         method: option.method,
         headers: {
           'Content-Type': 'application/json',
@@ -91,6 +97,13 @@ function App() {
       <h2>{peeple_role_comment}</h2>
       <h2>{leeple_role}</h2>
       
+      <button 
+        className="history-button"
+        onClick={() => setIsHistoryModalOpen(true)}
+      >
+        メッセージ履歴
+      </button>
+
       <div className="message-form">
         <div className="form-group">
           <label htmlFor="destination">送信先を選択:</label>
@@ -151,6 +164,37 @@ function App() {
           <div>{response}</div>
         </div>
       )}
+
+      <HistoryModal 
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)} 
+        onDelete={async (id: string, selectedChannel: ChannelType, fire_id: string) => {
+          const option = channelMap[selectedChannel];
+          if (!option?.url) {
+            setError('削除先URLが設定されていません');
+            return;
+          }
+          const delurl = option.url + '/messages/' + id
+          console.log(delurl)
+          try {
+            const response = await fetch(delurl, {
+              method: 'DELETE',
+            })
+            console.log(response)
+            if (!response.ok) {
+              console.error('Response not ok:', response)
+              throw new Error(`HTTP Error: ${response.status}`)
+            }
+          } catch (err) {
+            console.error('Request failed:', delurl)
+            setError(err instanceof Error ? err.message : 'Unknown error')
+          } finally {
+            setLoading(false)
+            await deleteDoc(doc(db, selectedChannel + "_messages",fire_id ))
+          }
+          
+        }}
+      />
     </div>
   )
 }
