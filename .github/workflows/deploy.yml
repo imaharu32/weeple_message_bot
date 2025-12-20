@@ -1,0 +1,59 @@
+name: Deploy to Github Pages
+
+on:
+    push:
+        branches:
+            - main
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # 使用するNode.jsのバージョンを指定
+
+      - name: 📦 Install dependencies
+        run: npm install # または yarn install, pnpm install
+
+      - name: 🏗️ Build project
+        # React CRAの場合は 'npm run build'
+        # Viteの場合は 'npm run build' (package.jsonで build: "tsc && vite build" のように設定されている前提)
+        env:
+          VITE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        run: npm run build 
+      
+      - name: 🧭 Debug show build output
+        run: |
+          ls -la dist || true
+          head -n 40 dist/index.html || true
+          find dist -maxdepth 3 -type f | wc -l || true
+      - name: ⬆️ Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  # buildジョブが成功した後に実行される
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import './App.css'
+import { collection, addDoc } from "firebase/firestore"; 
+import { db } from "./firebase";
 
+type ChannelType = 'PLAY' | 'CREATE' | 'DRAFT'
 interface Option {
   label: string
   url: string
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  channelType: ChannelType
 }
 const comment = 'メッセージに@Peepleとかを入れてもメンションができません。以下の<@&role_id>を代わりに使ってください。'
 const peeple_role_comment = '@Peeple:　　<@&1122017976356434066>'
@@ -12,6 +16,20 @@ const leeple_role = '@Leeple:　　<@&1140645113467523087>'
 const play_url = import.meta.env.VITE_PLAY_WEBHOOK_URL
 const create_url = import.meta.env.VITE_CREATE_WEBHOOK_URL
 const draft_url = import.meta.env.VITE_DRAFT_WEBHOOK_URL
+
+async function addMessage(message: string, id: string, type: ChannelType) {
+  const db_type = type + "_messages"
+  try {
+    const docRef = await addDoc(collection(db, db_type), {
+      message: message,
+      id: id,
+      createdAt: new Date()
+    });
+    console.log("メッセージをDBに保存しました: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding document: ", e);
+  }
+}
 
 function App() {
   
@@ -22,9 +40,9 @@ function App() {
   const [selectedOption, setSelectedOption] = useState<string>('0')
 
   const post_options: Option[] = [
-    { label: 'プレイ会', url: play_url, method: 'POST' },
-    { label: '制作会', url: create_url, method: 'POST' },
-    { label: '運営用草稿チャンネル', url: draft_url, method: 'POST' },
+    { label: 'プレイ会', url: play_url, method: 'POST', channelType: 'PLAY' },
+    { label: '制作会', url: create_url, method: 'POST', channelType: 'CREATE' },
+    { label: '運営用草稿チャンネル', url: draft_url, method: 'POST', channelType: 'DRAFT' },
   ]
 
   const handleRequest = async (option: Option, message: string) => {
@@ -47,6 +65,9 @@ function App() {
         console.error('Response not ok:', response)
         throw new Error(`HTTP Error: ${response.status}`)
       }
+      const responseData = await response.json()
+      const id = responseData.id || 'unknown_id'
+      await addMessage(message, id, option.channelType)
       setResponse("送信に成功しました！")
     } catch (err) {
       console.error('Request failed:', play_url)
