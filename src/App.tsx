@@ -21,12 +21,12 @@ const draft_url = import.meta.env.VITE_DRAFT_WEBHOOK_URL
 async function addMessage(message: string, id: string, type: ChannelType) {
   const db_type = type + "_messages"
   try {
-    const docRef = await addDoc(collection(db, db_type), {
+    await addDoc(collection(db, db_type), {
       message: message,
       id: id,
       createdAt: new Date()
     });
-    console.log("メッセージをDBに保存しました: ", docRef.id);
+    console.log("メッセージをDBに保存しました");
   } catch (e) {
     console.error("Error adding document: ", e);
   }
@@ -82,7 +82,7 @@ function App() {
       await addMessage(message, id, option.channelType)
       setResponse("送信に成功しました！")
     } catch (err) {
-      console.error('Request failed:', play_url)
+      console.error('Request failed:')
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
@@ -175,22 +175,21 @@ function App() {
             return;
           }
           const delurl = option.url + '/messages/' + id
-          console.log(delurl)
           try {
             const response = await fetch(delurl, {
               method: 'DELETE',
             })
-            console.log(response)
             if (!response.ok) {
               console.error('Response not ok:', response)
               throw new Error(`HTTP Error: ${response.status}`)
             }
+            await deleteDoc(doc(db, selectedChannel + "_messages",fire_id ))
           } catch (err) {
             console.error('Request failed:', delurl)
             setError(err instanceof Error ? err.message : 'Unknown error')
           } finally {
             setLoading(false)
-            await deleteDoc(doc(db, selectedChannel + "_messages",fire_id ))
+            
           }
           
         }}
