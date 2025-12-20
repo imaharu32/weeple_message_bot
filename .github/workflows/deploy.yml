@@ -41,6 +41,8 @@ jobs:
           ls -la dist || true
           head -n 40 dist/index.html || true
           find dist -maxdepth 3 -type f | wc -l || true
+      - name: 📄 Add SPA fallback (404.html)
+        run: cp dist/index.html dist/404.html
       - name: ⬆️ Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
