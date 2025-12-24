@@ -3,6 +3,7 @@ import './App.css'
 import { collection, addDoc, deleteDoc, doc} from "firebase/firestore"; 
 import { db } from "./firebase";
 import { HistoryModal } from "./HistoryModal";
+import { ReminderList } from "./ReminderList";
 
 export type ChannelType = 'PLAY' | 'CREATE' | 'DRAFT'
 interface Option {
@@ -33,7 +34,7 @@ async function addMessage(message: string, id: string, type: ChannelType) {
 }
 
 function App() {
-  
+  const [currentPage, setCurrentPage] = useState<'message' | 'reminder'>('message')
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState<string>('')
   const [error, setError] = useState<string>('')
@@ -91,13 +92,32 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Weeple botメッセージ送信ツール</h1>
-      <h2>{comment}</h2>
-
-      <h2>{peeple_role_comment}</h2>
-      <h2>{leeple_role}</h2>
+      <h1>Weeple bot 管理ツール</h1>
       
-      <button 
+      {/* ページ切替ナビゲーション */}
+      <div className="page-navigation">
+        <button 
+          className={`nav-button ${currentPage === 'message' ? 'active' : ''}`}
+          onClick={() => setCurrentPage('message')}
+        >
+          メッセージ送信
+        </button>
+        <button 
+          className={`nav-button ${currentPage === 'reminder' ? 'active' : ''}`}
+          onClick={() => setCurrentPage('reminder')}
+        >
+          リマインダー管理
+        </button>
+      </div>
+
+      {/* メッセージ送信ページ */}
+      {currentPage === 'message' && (
+        <>
+          <h2>{comment}</h2>
+          <h2>{peeple_role_comment}</h2>
+          <h2>{leeple_role}</h2>
+          
+          <button 
         className="history-button"
         onClick={() => setIsHistoryModalOpen(true)}
       >
@@ -194,6 +214,18 @@ function App() {
           
         }}
       />
+        </>
+      )}
+
+      {/* リマインダー管理ページ */}
+      {currentPage === 'reminder' && (
+        <ReminderList 
+          channelOptions={post_options.map(opt => ({
+            label: opt.label,
+            channelType: opt.channelType
+          }))}
+        />
+      )}
     </div>
   )
 }

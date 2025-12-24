@@ -20,11 +20,49 @@ body {
 
 h1 {
   color: #fff;
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
   font-size: 2.5rem;
   font-weight: 700;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   letter-spacing: -0.5px;
+}
+
+/* ページナビゲーション */
+.page-navigation {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.nav-button {
+  background: white;
+  color: #667eea;
+  border: 2px solid transparent;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.nav-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.nav-button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.nav-button:active {
+  transform: translateY(0);
 }
 
 .history-button {
