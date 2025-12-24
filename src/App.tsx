@@ -219,12 +219,15 @@ function App() {
 
       {/* リマインダー管理ページ */}
       {currentPage === 'reminder' && (
-        <ReminderList 
-          channelOptions={post_options.map(opt => ({
-            label: opt.label,
-            channelType: opt.channelType
-          }))}
-        />
+        <>
+          <h2>@植田郁：   {'<@921376571602911282>'}</h2>
+          <ReminderList 
+            channelOptions={post_options.map(opt => ({
+              label: opt.label,
+              channelType: opt.channelType
+            }))}
+          />
+        </>
       )}
     </div>
   )
