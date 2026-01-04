@@ -305,12 +305,29 @@
   background: #f7fafc;
 }
 
-.menu-item.delete-button {
-  color: #c53030;
+.menu-item.history-edit-button {
+  color: #667eea;
+  background: white;
+  padding: 0.5rem 1rem;
+  min-height: 36px;
+  line-height: 1.2;
 }
 
-.menu-item.delete-button:hover {
+.menu-item.history-edit-button:hover {
+  background: #eef2ff;
+}
+
+.menu-item.history-delete-button {
+  color: #c53030;
+  background: white;
+  padding: 0.5rem 1rem;
+  min-height: 36px;
+  line-height: 1.2;
+  }
+
+.menu-item.history-delete-button:hover {
   background: #fff5f5;
+  color: #c53030;
 }
 
 .history-message {

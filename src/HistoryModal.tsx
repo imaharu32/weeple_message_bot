@@ -7,9 +7,10 @@ interface HistoryModalProps {
     isOpen: boolean;
     onClose: () => void;
     onDelete?: (id: string, selected: ChannelType, fire_id: string) => Promise<void>;
+    onEdit?: (record: HistoryRecord, selected: ChannelType) => void;
 }
 
-export function HistoryModal({ isOpen, onClose, onDelete }: HistoryModalProps) {
+export function HistoryModal({ isOpen, onClose, onDelete, onEdit }: HistoryModalProps) {
     const [selectedChannel, setSelectedChannel] = useState<ChannelType>('PLAY');
     const [histories, setHistories] = useState<HistoryRecord[]>([]);
     const [loading, setLoading] = useState(false);
@@ -112,7 +113,7 @@ export function HistoryModal({ isOpen, onClose, onDelete }: HistoryModalProps) {
                       {openMenuId === record.id && (
                         <div className="menu-dropdown">
                           <button 
-                            className="menu-item delete-button"
+                            className="menu-item history-delete-button"
                             onClick={async () => {
                               if (onDelete) {
                                 await onDelete(record.id, selectedChannel, record.fire_id);
@@ -122,6 +123,17 @@ export function HistoryModal({ isOpen, onClose, onDelete }: HistoryModalProps) {
                             }}
                           >
                             削除
+                          </button>
+                          <button 
+                            className="menu-item history-edit-button"
+                            onClick={() => {
+                              if (onEdit) {
+                                onEdit(record, selectedChannel);
+                                setOpenMenuId(null);
+                              }
+                            }}
+                          >
+                            編集
                           </button>
                         </div>
                       )}

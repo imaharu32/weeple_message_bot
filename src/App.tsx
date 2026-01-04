@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import './App.css'
-import { collection, addDoc, deleteDoc, doc} from "firebase/firestore"; 
+import { collection, addDoc, deleteDoc, doc, updateDoc} from "firebase/firestore"; 
 import { db } from "./firebase";
 import { HistoryModal } from "./HistoryModal";
 import { ReminderList } from "./ReminderList";
+import type { HistoryRecord } from "./history";
 
 export type ChannelType = 'PLAY' | 'CREATE' | 'DRAFT'
 interface Option {
@@ -41,6 +42,8 @@ function App() {
   const [message, setMessage] = useState<string>('')
   const [selectedOption, setSelectedOption] = useState<string>('0')
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+  const [editingRecord, setEditingRecord] = useState<HistoryRecord | null>(null)
+  const [editingChannel, setEditingChannel] = useState<ChannelType>('PLAY')
 
   const post_options: Option[] = [
     { label: 'プレイ会', url: play_url, method: 'POST', channelType: 'PLAY' },
@@ -90,6 +93,54 @@ function App() {
     }
   }
 
+  const handleEditMessage = async () => {
+    if (!editingRecord) return
+
+    setLoading(true)
+    setError('')
+    setResponse('')
+
+    try {
+      const option = channelMap[editingChannel];
+      if (!option?.url) {
+        setError('編集先URLが設定されていません');
+        setLoading(false);
+        return;
+      }
+
+      // Discord メッセージを編集
+      const editUrl = option.url + '/messages/' + editingRecord.id
+      const response = await fetch(editUrl, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: message })
+      })
+
+      if (!response.ok) {
+        console.error('Response not ok:', response)
+        throw new Error(`HTTP Error: ${response.status}`)
+      }
+
+      // Firestore のメッセージを更新
+      await updateDoc(doc(db, editingChannel + "_messages", editingRecord.fire_id), {
+        message: message,
+        updatedAt: new Date()
+      })
+
+      setResponse("メッセージを更新しました！")
+      setMessage('')
+      setSelectedOption('0')
+      setEditingRecord(null)
+    } catch (err) {
+      console.error('Edit failed:')
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="App">
       <h1>Weeple bot 管理ツール</h1>
@@ -131,7 +182,7 @@ function App() {
             id="destination"
             value={selectedOption}
             onChange={(e) => setSelectedOption(e.target.value)}
-            disabled={loading}
+            disabled={loading || !!editingRecord}
             className="select-input"
           >
             <option value="">-- 送信先を選択してください --</option>
@@ -156,23 +207,46 @@ function App() {
           />
         </div>
 
-        <button
-          onClick={() => {
-            if (!selectedOption) {
-              setError('送信先を選択してください')
-              return
-            }
-            if (!message.trim()) {
-              setError('メッセージを入力してください')
-              return
-            }
-            handleRequest(post_options[parseInt(selectedOption)], message)
-          }}
-          disabled={loading || !selectedOption || !message.trim()}
-          className="send-button"
-        >
-          {loading ? 'メッセージ送信中...' : 'メッセージを送信'}
-        </button>
+        <div className="button-group">
+          <button
+            onClick={() => {
+              if (!selectedOption && !editingRecord) {
+                setError('送信先を選択してください')
+                return
+              }
+              if (!message.trim()) {
+                setError('メッセージを入力してください')
+                return
+              }
+              if (editingRecord) {
+                // 編集モード
+                handleEditMessage();
+              } else {
+                // 新規送信モード
+                handleRequest(post_options[parseInt(selectedOption)], message)
+              }
+            }}
+            disabled={loading || (!selectedOption && !editingRecord) || !message.trim()}
+            className="send-button"
+          >
+            {loading ? (editingRecord ? 'メッセージ更新中...' : 'メッセージ送信中...') : (editingRecord ? 'メッセージを更新' : 'メッセージを送信')}
+          </button>
+          {editingRecord && (
+            <button
+              onClick={() => {
+                setEditingRecord(null);
+                setEditingChannel('PLAY');
+                setMessage('');
+                setSelectedOption('0');
+                setError('');
+              }}
+              disabled={loading}
+              className="cancel-button"
+            >
+              キャンセル
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && <p className="loading">リクエスト送信中...</p>}
@@ -187,7 +261,13 @@ function App() {
 
       <HistoryModal 
         isOpen={isHistoryModalOpen} 
-        onClose={() => setIsHistoryModalOpen(false)} 
+        onClose={() => setIsHistoryModalOpen(false)}
+        onEdit={(record: HistoryRecord, selectedChannel: ChannelType) => {
+          setEditingRecord(record);
+          setEditingChannel(selectedChannel);
+          setMessage(record.message);
+          setIsHistoryModalOpen(false);
+        }}
         onDelete={async (id: string, selectedChannel: ChannelType, fire_id: string) => {
           const option = channelMap[selectedChannel];
           if (!option?.url) {
