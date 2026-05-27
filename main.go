@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,6 +15,27 @@ import (
 func main() {
 	// .env ファイルを読み込む（エラーは無視：Docker では環境変数が既に設定されている）
 	_ = godotenv.Load()
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	go func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		})
+		mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		})
+
+		if err := http.ListenAndServe(":"+port, mux); err != nil {
+			fmt.Println("HTTPサーバーの起動に失敗:", err)
+		}
+	}()
 
 	// 管理者IDを読み込み
 	loadAdminIDs()
