@@ -361,7 +361,7 @@ func announceWindowDaysByTarget(target calendarSyncTarget) int {
 	case "CREATE":
 		return 7
 	case "PLAY":
-		return 5
+		return 7
 	default:
 		return 5
 	}
@@ -393,7 +393,7 @@ func buildAnnounceMessage(target calendarSyncTarget, ev *calendar.Event, startAt
 
 	var message string
 	if title == "プレイ会" || title == "制作会" {
-		message = fmt.Sprintf("<@&%s>\n", roleID)
+		message = "@everyone\n"
 		message += fmt.Sprintf("### 次回の%sは、%sに%sで行います！\n\n", title, startStr, location)
 		message += description
 		message += "\n\n参加する方はリアクションをお願いします！"
